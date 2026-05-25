@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanSense — Application Result</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --navy: #0a0f1e;
+            --navy-mid: #111827;
+            --navy-card: #141d2e;
+            --gold: #c9a84c;
+            --gold-light: #e8c96d;
+            --cream: #f5f0e8;
+            --text-muted: #8892a4;
+            --border: rgba(201,168,76,0.18);
+            --approved: #10b981;
+            --approved-bg: rgba(16,185,129,0.08);
+            --approved-border: rgba(16,185,129,0.25);
+            --rejected: #ef4444;
+            --rejected-bg: rgba(239,68,68,0.08);
+            --rejected-border: rgba(239,68,68,0.25);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--navy);
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+        }
+
+        .bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        /* Result-specific glow — green for approved, red for rejected */
+        .bg-canvas.approved::before {
+            content: '';
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+            top: -200px;
+            right: -100px;
+        }
+
+        .bg-canvas.rejected::before {
+            content: '';
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 70%);
+            top: -200px;
+            right: -100px;
+        }
+
+        .grid-lines {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Nav */
+        nav {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 60px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--cream);
+        }
+
+        .logo span { color: var(--gold); }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: var(--gold); }
+
+        /* Page wrapper */
+        .page-wrapper {
+            position: relative;
+            z-index: 5;
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 60px 24px 80px;
+        }
+
+        /* Hero result banner */
+        .result-hero {
+            text-align: center;
+            margin-bottom: 48px;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .result-icon {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 2rem;
+        }
+
+        .result-icon.approved {
+            background: var(--approved-bg);
+            border: 2px solid var(--approved-border);
+            color: var(--approved);
+        }
+
+        .result-icon.rejected {
+            background: var(--rejected-bg);
+            border: 2px solid var(--rejected-border);
+            color: var(--rejected);
+        }
+
+        .result-label {
+            display: inline-block;
+            font-size: 0.72rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .result-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.2rem, 6vw, 3.8rem);
+            font-weight: 900;
+            line-height: 1.05;
+            margin-bottom: 12px;
+        }
+
+        .result-headline.approved { color: var(--approved); }
+        .result-headline.rejected { color: var(--rejected); }
+
+        .result-subtext {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 440px;
+            margin: 0 auto;
+            line-height: 1.65;
+        }
+
+        /* Detail card */
+        .detail-card {
+            background: var(--navy-card);
+            border: 1px solid var(--border);
+            margin-bottom: 2px;
+            animation: fadeUp 0.6s 0.15s ease both;
+        }
+
+        .card-header {
+            padding: 18px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .card-header i { color: var(--gold); }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .detail-item {
+            background: var(--navy-card);
+            padding: 20px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .detail-value {
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: var(--cream);
+        }
+
+        .detail-value.mono {
+            font-size: 0.98rem;
+        }
+
+        .detail-value .currency {
+            color: var(--gold);
+            font-size: 0.8em;
+            margin-right: 2px;
+        }
+
+        /* Status badge within grid */
+        .badge-pill {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+        }
+
+        .badge-pill.approved {
+            background: var(--approved-bg);
+            border: 1px solid var(--approved-border);
+            color: var(--approved);
+        }
+
+        .badge-pill.rejected {
+            background: var(--rejected-bg);
+            border: 1px solid var(--rejected-border);
+            color: var(--rejected);
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 14px;
+            margin-top: 36px;
+            animation: fadeUp 0.6s 0.3s ease both;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--gold);
+            color: var(--navy);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.88rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 14px 32px;
+            border-radius: 4px;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 20px rgba(201,168,76,0.2);
+        }
+
+        .btn-primary:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 0 36px rgba(201,168,76,0.35);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: transparent;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.88rem;
+            padding: 14px 24px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            color: var(--cream);
+            border-color: rgba(201,168,76,0.4);
+        }
+
+        /* Footer */
+        footer {
+            position: relative;
+            z-index: 5;
+            text-align: center;
+            padding: 32px 24px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+        }
+
+        footer p { margin-bottom: 10px; }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .social-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            transition: color 0.2s;
+        }
+
+        .social-links a:hover { color: var(--gold); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Pulse animation on icon */
+        @keyframes pulse-approved {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.3); }
+            50% { box-shadow: 0 0 0 16px rgba(16,185,129,0); }
+        }
+
+        @keyframes pulse-rejected {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+            50% { box-shadow: 0 0 0 16px rgba(239,68,68,0); }
+        }
+
+        .result-icon.approved { animation: pulse-approved 2.5s ease 0.5s 3; }
+        .result-icon.rejected { animation: pulse-rejected 2.5s ease 0.5s 3; }
+
+        @media (max-width: 640px) {
+            nav { padding: 16px 20px; }
+            .page-wrapper { padding: 32px 16px 60px; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .actions { flex-direction: column; }
+            .btn-primary, .btn-secondary { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    {# Determine result class for Jinja #}
+    {% set res_class = 'approved' if result == 'APPROVED' else 'rejected' %}
+
+    <div class="bg-canvas {{ res_class }}"><div class="grid-lines"></div></div>
+
+    <nav>
+        <a href="/" class="logo">Loan<span>Sense</span></a>
+        <a href="/" class="back-link"><i class="fas fa-home"></i> Home</a>
+    </nav>
+
+    <div class="page-wrapper">
+
+        <!-- Result Hero -->
+        <div class="result-hero">
+            <div class="result-icon {{ res_class }}">
+                {% if result == 'APPROVED' %}
+                    <i class="fas fa-check"></i>
+                {% else %}
+                    <i class="fas fa-times"></i>
+                {% endif %}
+            </div>
+            <span class="result-label">Prediction Result</span>
+            <h1 class="result-headline {{ res_class }}">
+                {% if result == 'APPROVED' %}Loan Approved{% else %}Loan Rejected{% endif %}
+            </h1>
+            <p class="result-subtext">
+                {% if result == 'APPROVED' %}
+                    Great news! Based on your financial profile, our model predicts your loan is likely to be approved.
+                {% else %}
+                    Based on your current financial profile, our model predicts the loan may be rejected. Consider improving your CIBIL score or reducing the loan amount.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Application Summary -->
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-user-circle"></i> Personal &amp; Employment Details
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Dependents</span>
+                    <span class="detail-value">{{ no_of_dependents }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Education</span>
+                    <span class="detail-value">
+                        {% if education_not_graduate == 'No' %}Graduate{% else %}Not a Graduate{% endif %}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Employment</span>
+                    <span class="detail-value">
+                        {% if self_employed == 'Yes' %}Self-Employed{% else %}Salaried{% endif %}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">CIBIL Score</span>
+                    <span class="detail-value">{{ cibil_score }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-hand-holding-usd"></i> Loan Details
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Annual Income</span>
+                    <span class="detail-value"><span class="currency">₹</span>{{ "{:,.0f}".format(income_annum) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Loan Amount</span>
+                    <span class="detail-value"><span class="currency">₹</span>{{ "{:,.0f}".format(loan_amount) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Loan Term</span>
+                    <span class="detail-value">{{ loan_term }} Months</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Decision</span>
+                    <span class="detail-value">
+                        <span class="badge-pill {{ res_class }}">{{ result }}</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-building"></i> Asset Valuation
+            </div>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Residential Assets</span>
+                    <span class="detail-value"><span class="currency">₹</span>{{ "{:,.0f}".format(residential_assets_value) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Commercial Assets</span>
+                    <span class="detail-value"><span class="currency">₹</span>{{ "{:,.0f}".format(commercial_assets_value) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Luxury Assets</span>
+                    <span class="detail-value"><span class="currency">₹</span>{{ "{:,.0f}".format(luxury_assets_value) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Bank / Financial Assets</span>
+                    <span class="detail-value"><span class="currency">₹</span>{{ "{:,.0f}".format(bank_asset_value) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <a href="/form" class="btn-primary">
+                <i class="fas fa-redo"></i> Apply Again
+            </a>
+            <a href="/" class="btn-secondary">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>Created by <strong>Nitesh Kumar Pandey</strong></p>
+        <div class="social-links">
+            <a href="https://www.linkedin.com/in/nitesh-pandey-a50463278" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>
+            <a href="https://github.com/nitesh-kumar-pandey" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+            <a href="https://twitter.com/__nitesh_1" target="_blank"><i class="fab fa-twitter"></i> Twitter</a>
+            <a href="https://www.instagram.com/__nitesh_1/" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanSense — Smart Loan Prediction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --navy: #0a0f1e;
+            --navy-mid: #111827;
+            --navy-card: #141d2e;
+            --gold: #c9a84c;
+            --gold-light: #e8c96d;
+            --cream: #f5f0e8;
+            --text-muted: #8892a4;
+            --card-bg: rgba(255,255,255,0.04);
+            --border: rgba(201,168,76,0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--navy);
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background */
+        .bg-canvas {
+            position: fixed; inset: 0; z-index: 0;
+            overflow: hidden; pointer-events: none;
+        }
+        .bg-canvas::before {
+            content: ''; position: absolute;
+            width: 700px; height: 700px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%);
+            top: -200px; right: -150px;
+        }
+        .bg-canvas::after {
+            content: ''; position: absolute;
+            width: 500px; height: 500px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+            bottom: -100px; left: -100px;
+        }
+        .grid-lines {
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 22px 60px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(10,15,30,0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            animation: fadeDown 0.6s ease both;
+        }
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem; font-weight: 700;
+            letter-spacing: 0.02em;
+            text-decoration: none; color: var(--cream);
+        }
+        .logo span { color: var(--gold); }
+        .nav-links {
+            display: flex; gap: 32px;
+            list-style: none; align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none;
+            font-size: 0.88rem; font-weight: 500;
+            letter-spacing: 0.05em; text-transform: uppercase;
+            transition: color 0.2s; padding: 4px 0;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute;
+            bottom: -2px; left: 0; right: 0; height: 1px;
+            background: var(--gold); transform: scaleX(0);
+            transition: transform 0.2s;
+        }
+        .nav-links a:hover { color: var(--gold); }
+        .nav-links a:hover::after { transform: scaleX(1); }
+        .nav-links .nav-cta {
+            background: var(--gold); color: var(--navy) !important;
+            padding: 9px 22px; border-radius: 4px; font-weight: 700;
+        }
+        .nav-links .nav-cta::after { display: none; }
+        .nav-links .nav-cta:hover { background: var(--gold-light); }
+
+        /* ── HERO ── */
+        #home {
+            position: relative; z-index: 5;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: calc(100vh - 70px);
+            text-align: center; padding: 60px 24px;
+        }
+        .badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(201,168,76,0.1); border: 1px solid var(--border);
+            border-radius: 100px; padding: 6px 18px;
+            font-size: 0.78rem; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--gold);
+            margin-bottom: 32px;
+            animation: fadeUp 0.7s 0.1s ease both;
+        }
+        .badge i { font-size: 0.55rem; animation: blink 2s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(3rem, 8vw, 6.5rem);
+            font-weight: 900; line-height: 1.05;
+            letter-spacing: -0.02em; margin-bottom: 24px;
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+        h1 em { font-style: italic; color: var(--gold); }
+
+        .subtitle {
+            max-width: 520px; font-size: 1.1rem; line-height: 1.7;
+            color: var(--text-muted); margin-bottom: 52px; font-weight: 300;
+            animation: fadeUp 0.7s 0.3s ease both;
+        }
+        .cta-group {
+            display: flex; gap: 16px; align-items: center;
+            flex-wrap: wrap; justify-content: center;
+            animation: fadeUp 0.7s 0.4s ease both;
+        }
+        .cta-primary {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: var(--gold); color: var(--navy);
+            text-decoration: none; font-weight: 700;
+            font-size: 0.95rem; letter-spacing: 0.04em;
+            padding: 16px 36px; border-radius: 4px;
+            text-transform: uppercase;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 30px rgba(201,168,76,0.25);
+        }
+        .cta-primary:hover {
+            background: var(--gold-light); transform: translateY(-2px);
+            box-shadow: 0 0 50px rgba(201,168,76,0.4);
+        }
+        .cta-secondary {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-muted); text-decoration: none;
+            font-size: 0.9rem; transition: color 0.2s, border-color 0.2s;
+            border: 1px solid var(--border); padding: 15px 28px; border-radius: 4px;
+        }
+        .cta-secondary:hover { color: var(--cream); border-color: rgba(201,168,76,0.4); }
+
+        /* ── STATS ── */
+        .stats {
+            position: relative; z-index: 5;
+            display: flex; justify-content: center;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .stat {
+            flex: 1; max-width: 240px; text-align: center;
+            padding: 36px 20px; border-right: 1px solid var(--border);
+        }
+        .stat:last-child { border-right: none; }
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem; font-weight: 700;
+            color: var(--gold); display: block;
+        }
+        .stat-label {
+            font-size: 0.78rem; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--text-muted); margin-top: 4px;
+        }
+
+        /* ── SECTION SHARED ── */
+        section { position: relative; z-index: 5; }
+        .section-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(201,168,76,0.08); border: 1px solid var(--border);
+            border-radius: 100px; padding: 5px 16px;
+            font-size: 0.73rem; letter-spacing: 0.12em;
+            text-transform: uppercase; color: var(--gold); margin-bottom: 18px;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700; line-height: 1.15; margin-bottom: 14px;
+        }
+        .section-subtitle {
+            color: var(--text-muted); font-size: 0.95rem;
+            line-height: 1.7; max-width: 500px;
+        }
+
+        /* ── FEATURES ── */
+        #features {
+            padding: 90px 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .features-header { margin-bottom: 52px; }
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1px; background: var(--border); border: 1px solid var(--border);
+        }
+        .feature {
+            background: var(--navy); padding: 40px 36px;
+            transition: background 0.3s;
+        }
+        .feature:hover { background: var(--card-bg); }
+        .feature-icon {
+            width: 44px; height: 44px;
+            background: rgba(201,168,76,0.1); border: 1px solid var(--border);
+            border-radius: 8px; display: flex; align-items: center;
+            justify-content: center; margin-bottom: 20px;
+            color: var(--gold); font-size: 1rem;
+        }
+        .feature h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.12rem; margin-bottom: 10px;
+        }
+        .feature p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
+
+        /* ── HOW IT WORKS ── */
+        #how-it-works {
+            padding: 90px 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .hiw-layout {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 64px; align-items: start; margin-top: 52px;
+        }
+        .steps-list { display: flex; flex-direction: column; }
+        .step-item {
+            display: flex; gap: 20px;
+            padding: 28px 0; border-bottom: 1px solid var(--border);
+        }
+        .step-item:last-child { border-bottom: none; }
+        .step-num-wrap {
+            flex-shrink: 0; display: flex;
+            flex-direction: column; align-items: center;
+        }
+        .step-num {
+            width: 36px; height: 36px; border: 1px solid var(--gold);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem; color: var(--gold); font-weight: 700;
+        }
+        .step-connector {
+            width: 1px; flex: 1; min-height: 16px;
+            background: var(--border); margin-top: 8px;
+        }
+        .step-item:last-child .step-connector { display: none; }
+        .step-content { padding-top: 6px; }
+        .step-content h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem; margin-bottom: 6px;
+        }
+        .step-content p { font-size: 0.87rem; color: var(--text-muted); line-height: 1.65; }
+
+        /* Sidebar panel */
+        .hiw-panel {
+            background: var(--navy-card); border: 1px solid var(--border);
+            padding: 36px; position: sticky; top: 100px;
+        }
+        .hiw-panel-title {
+            font-family: 'Playfair Display', serif; font-size: 1.1rem;
+            margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+        }
+        .factor-list { display: flex; flex-direction: column; gap: 14px; }
+        .factor { display: flex; align-items: center; gap: 14px; }
+        .factor-name { font-size: 0.8rem; color: var(--text-muted); width: 130px; flex-shrink: 0; }
+        .factor-bar-wrap {
+            flex: 1; height: 5px; background: rgba(255,255,255,0.06);
+            border-radius: 10px; overflow: hidden;
+        }
+        .factor-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            border-radius: 10px;
+            width: 0;
+            transition: width 1s ease;
+        }
+        .factor-pct { font-size: 0.78rem; color: var(--gold); width: 36px; text-align: right; flex-shrink: 0; }
+        .hiw-cta { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .hiw-cta a {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: var(--gold); color: var(--navy); text-decoration: none;
+            font-weight: 700; font-size: 0.88rem; letter-spacing: 0.05em;
+            text-transform: uppercase; padding: 14px 20px; border-radius: 4px;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .hiw-cta a:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+        /* ── ABOUT ── */
+        #about {
+            padding: 90px 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .about-layout {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 64px; align-items: center; margin-top: 52px;
+        }
+        .about-text p {
+            font-size: 0.93rem; color: var(--text-muted);
+            line-height: 1.75; margin-bottom: 16px;
+        }
+        .about-text p:last-of-type { margin-bottom: 0; }
+        .about-text strong { color: var(--cream); font-weight: 500; }
+        .tech-stack { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+        .tech-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(201,168,76,0.08); border: 1px solid var(--border);
+            border-radius: 4px; padding: 6px 14px;
+            font-size: 0.78rem; color: var(--gold); letter-spacing: 0.05em;
+        }
+
+        .about-author {
+            background: var(--navy-card); border: 1px solid var(--border);
+            padding: 40px; text-align: center;
+        }
+        .author-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold) 0%, rgba(201,168,76,0.3) 100%);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px; font-size: 2rem; color: var(--navy);
+        }
+        .author-name { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 6px; }
+        .author-title {
+            font-size: 0.82rem; color: var(--text-muted);
+            letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 24px;
+        }
+        .author-socials { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .author-socials a {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+            color: var(--text-muted); text-decoration: none;
+            font-size: 0.8rem; padding: 8px 14px; border-radius: 4px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .author-socials a:hover { color: var(--gold); border-color: var(--gold); }
+
+        /* ── FOOTER ── */
+        footer {
+            position: relative; z-index: 5;
+            display: flex; align-items: center;
+            justify-content: space-between; flex-wrap: wrap; gap: 16px;
+            padding: 32px 60px;
+            color: var(--text-muted); font-size: 0.82rem;
+        }
+        .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--cream); }
+        .footer-logo span { color: var(--gold); }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--gold); }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .reveal {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.65s ease, transform 0.65s ease;
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            nav { padding: 18px 24px; }
+            #features, #how-it-works, #about { padding: 60px 24px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .hiw-layout, .about-layout { grid-template-columns: 1fr; gap: 40px; }
+            .hiw-panel { position: static; }
+            footer { padding: 28px 24px; flex-direction: column; text-align: center; }
+            .footer-links { justify-content: center; }
+        }
+        @media (max-width: 600px) {
+            .nav-item { display: none; }
+            .stats { flex-direction: column; }
+            .stat { max-width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-canvas"><div class="grid-lines"></div></div>
+
+    <!-- NAV -->
+    <nav>
+        <a href="#home" class="logo">Loan<span>Sense</span></a>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="#how-it-works">How It Works</a></li>
+            <li class="nav-item"><a href="#about">About</a></li>
+            <li><a href="/form" class="nav-cta">Apply Now <i class="fas fa-arrow-right"></i></a></li>
+        </ul>
+    </nav>
+
+    <!-- HERO -->
+    <section id="home">
+        <div class="badge"><i class="fas fa-circle"></i> AI-Powered Decision Engine</div>
+        <h1>Know Your Loan<br><em>Before You Apply</em></h1>
+        <p class="subtitle">Our neural network model analyzes your financial profile instantly — giving you a clear approval prediction before you visit the bank.</p>
+        <div class="cta-group">
+            <a href="/form" class="cta-primary">
+                Check Eligibility <i class="fas fa-arrow-right"></i>
+            </a>
+            <a href="#how-it-works" class="cta-secondary">
+                <i class="fas fa-play-circle"></i> See How It Works
+            </a>
+        </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-value">95%</span>
+            <span class="stat-label">Model Accuracy</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">&lt;2s</span>
+            <span class="stat-label">Prediction Time</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">11</span>
+            <span class="stat-label">Features Analyzed</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value">ANN</span>
+            <span class="stat-label">Model Architecture</span>
+        </div>
+    </div>
+
+    <!-- FEATURES -->
+    <section id="features">
+        <div class="features-header reveal">
+            <div class="section-tag"><i class="fas fa-star"></i> Why LoanSense</div>
+            <h2 class="section-title">Built for Accuracy,<br>Designed for Clarity</h2>
+            <p class="section-subtitle">We combine machine learning with a seamless experience so you get trustworthy results in seconds.</p>
+        </div>
+        <div class="features-grid reveal">
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                <h3>Neural Network Model</h3>
+                <p>Built on a 4-layer Artificial Neural Network (64→32→16→1 neurons) with Dropout regularization, trained on real loan data with early stopping to deliver highly accurate approval predictions.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-database"></i></div>
+                <h3>Persistent Storage</h3>
+                <p>Every application is saved to a secure SQLite database via SQLAlchemy, creating a reliable record of each submission.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>CIBIL Score Analysis</h3>
+                <p>We factor in your CIBIL score alongside assets, income, and employment to give you a holistic, well-rounded result.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how-it-works">
+        <div class="reveal">
+            <div class="section-tag"><i class="fas fa-route"></i> How It Works</div>
+            <h2 class="section-title">From Application<br>to Answer in 3 Steps</h2>
+            <p class="section-subtitle">No lengthy paperwork. No waiting. Fill in your details and our model does the rest.</p>
+        </div>
+
+        <div class="hiw-layout">
+            <div class="steps-list reveal">
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">1</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step-content">
+                        <h4>Fill Your Financial Profile</h4>
+                        <p>Enter your annual income, loan amount, term, CIBIL score, asset values, education level, and employment status into the secure application form.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">2</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step-content">
+                        <h4>AI Model Analyzes Your Data</h4>
+                        <p>Your inputs are normalized using a <strong>StandardScaler</strong> fitted during training, then passed to our pre-trained Artificial Neural Network. It processes all 11 features and generates a probability score indicating loan approval likelihood.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">3</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step-content">
+                        <h4>Receive Instant Prediction</h4>
+                        <p>Your result — <strong style="color:var(--cream)">Approved</strong> or <strong style="color:var(--cream)">Rejected</strong> — is displayed immediately with a full breakdown. Your application is securely recorded in our database.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hiw-panel reveal">
+                <div class="hiw-panel-title">Key Factors in the Prediction</div>
+                <div class="factor-list">
+                    <div class="factor">
+                        <span class="factor-name">CIBIL Score</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="90%"></div></div>
+                        <span class="factor-pct">High</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Annual Income</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="78%"></div></div>
+                        <span class="factor-pct">High</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Loan Amount</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="72%"></div></div>
+                        <span class="factor-pct">High</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Residential Assets</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="60%"></div></div>
+                        <span class="factor-pct">Med</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Loan Term</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="52%"></div></div>
+                        <span class="factor-pct">Med</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Bank Assets</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="45%"></div></div>
+                        <span class="factor-pct">Med</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Employment</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="35%"></div></div>
+                        <span class="factor-pct">Low</span>
+                    </div>
+                    <div class="factor">
+                        <span class="factor-name">Education</span>
+                        <div class="factor-bar-wrap"><div class="factor-bar" data-width="28%"></div></div>
+                        <span class="factor-pct">Low</span>
+                    </div>
+                </div>
+                <div class="hiw-cta">
+                    <a href="/form">Start Your Application <i class="fas fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about">
+        <div class="reveal">
+            <div class="section-tag"><i class="fas fa-info-circle"></i> About</div>
+            <h2 class="section-title">About This Project</h2>
+            <p class="section-subtitle">A full-stack machine learning web application built as a learning project.</p>
+        </div>
+
+        <div class="about-layout">
+            <div class="about-text reveal">
+                <p><strong>LoanSense</strong> is a loan approval prediction system powered by a trained Artificial Neural Network. It was built to demonstrate how machine learning models can be integrated into real web applications to provide actionable financial insights.</p>
+                <p>The backend is a <strong>Flask</strong> application that loads a pre-trained <strong>Keras / TensorFlow ANN model</strong> and exposes it via a simple POST endpoint. Input features are normalized using the same <strong>StandardScaler</strong> fitted during training before being passed to the model. Every prediction is persisted to a <strong>SQLite database</strong> using <strong>Flask-SQLAlchemy</strong>, creating a full audit trail of all applications.</p>
+                <p>The model was trained on real-world loan dataset features including credit score, income, asset valuations, loan term, and personal profile data — giving it a well-rounded view of applicant eligibility.</p>
+                <div class="tech-stack">
+                    <span class="tech-pill"><i class="fab fa-python"></i> Python</span>
+                    <span class="tech-pill"><i class="fas fa-flask"></i> Flask</span>
+                    <span class="tech-pill"><i class="fas fa-brain"></i> TensorFlow / Keras</span>
+                    <span class="tech-pill"><i class="fas fa-chart-bar"></i> Scikit-learn</span>
+                    <span class="tech-pill"><i class="fas fa-database"></i> SQLite</span>
+                    <span class="tech-pill"><i class="fas fa-layer-group"></i> SQLAlchemy</span>
+                    <span class="tech-pill"><i class="fas fa-code"></i> HTML / CSS</span>
+                </div>
+            </div>
+
+            <div class="about-author reveal">
+                <div class="author-avatar"><i class="fas fa-user"></i></div>
+                <div class="author-name">Nitesh Kumar Pandey</div>
+                <div class="author-title">Developer &amp; ML Engineer</div>
+                <div class="author-socials">
+                    <a href="https://www.linkedin.com/in/nitesh-pandey-a50463278" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>
+                    <a href="https://github.com/nitesh-kumar-pandey" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="https://twitter.com/__nitesh_1" target="_blank"><i class="fab fa-twitter"></i> Twitter</a>
+                    <a href="https://www.instagram.com/__nitesh_1/" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-logo">Loan<span>Sense</span></div>
+        <span>© 2024 Nitesh Kumar Pandey. All rights reserved.</span>
+    </footer>
+
+    <script>
+        // Scroll reveal + bar animation
+        const reveals = document.querySelectorAll('.reveal');
+        const barObserver = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (!e.isIntersecting) return;
+                e.target.classList.add('visible');
+                // Animate any factor bars inside this element
+                e.target.querySelectorAll('.factor-bar[data-width]').forEach(bar => {
+                    setTimeout(() => { bar.style.width = bar.dataset.width; }, 200);
+                });
+                barObserver.unobserve(e.target);
+            });
+        }, { threshold: 0.12 });
+        reveals.forEach(el => barObserver.observe(el));
+
+        // Active nav highlight on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(s => {
+                if (window.scrollY >= s.offsetTop - 130) current = s.id;
+            });
+            navLinks.forEach(a => {
+                const isActive = a.getAttribute('href') === '#' + current;
+                a.style.color = isActive ? 'var(--gold)' : '';
+            });
+        });
+    </script>
+</body>
+</html>
